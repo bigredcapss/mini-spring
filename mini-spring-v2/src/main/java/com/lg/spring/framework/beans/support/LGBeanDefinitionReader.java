@@ -27,12 +27,16 @@ public class LGBeanDefinitionReader
         doScanner(contextConfig.getProperty("scanPackage"));
     }
 
+    public Properties getConfig(){
+        return this.contextConfig;
+    }
+
     public List<LGBeanDefinition> loadBeanDefinitions() {
         List<LGBeanDefinition> result = new ArrayList<LGBeanDefinition>();
         try {
             for (String className : regitryBeanClasses) {
                 Class<?> beanClass = Class.forName(className);
-
+                if(beanClass.isInterface()){continue;}
                 //保存类对应的ClassName（全类名）
                 //还有beanName
                 //1、默认是类名首字母小写

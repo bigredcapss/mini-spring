@@ -11,6 +11,7 @@ import java.lang.reflect.Field;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
+import java.util.Properties;
 
 /**
  * 该类职责：完成Bean的创建和DI
@@ -21,9 +22,9 @@ public class LGApplicationContext
 {
     private LGBeanDefinitionReader reader;
 
-    private Map<String, LGBeanDefinition> beanDefinitionMap = new HashMap<String, LGBeanDefinition>();
+    private Map<String,LGBeanDefinition> beanDefinitionMap = new HashMap<String, LGBeanDefinition>();
 
-    private Map<String, LGBeanWrapper> factoryBeanInstanceCache = new HashMap<String, LGBeanWrapper>();
+    private Map<String,LGBeanWrapper> factoryBeanInstanceCache = new HashMap<String, LGBeanWrapper>();
     private Map<String,Object> factoryBeanObjectCache = new HashMap<String, Object>();
 
     public LGApplicationContext(String... configLocations) {
@@ -132,10 +133,14 @@ public class LGApplicationContext
         String className = beanDefinition.getBeanClassName();
         Object instance = null;
         try {
-            Class<?> clazz = Class.forName(className);
-            //2、默认的类名首字母小写
-            instance = clazz.newInstance();
-            this.factoryBeanObjectCache.put(beanName, instance);
+            if(this.factoryBeanObjectCache.containsKey(beanName)){
+                instance = this.factoryBeanObjectCache.get(beanName);
+            }else {
+                Class<?> clazz = Class.forName(className);
+                //2、默认的类名首字母小写
+                instance = clazz.newInstance();
+                this.factoryBeanObjectCache.put(beanName, instance);
+            }
         }catch (Exception e){
             e.printStackTrace();
         }
@@ -144,5 +149,17 @@ public class LGApplicationContext
 
     public Object getBean(Class beanClass){
         return getBean(beanClass.getName());
+    }
+
+    public int getBeanDefinitionCount() {
+        return this.beanDefinitionMap.size();
+    }
+
+    public String[] getBeanDefinitionNames() {
+        return this.beanDefinitionMap.keySet().toArray(new String[this.beanDefinitionMap.size()]);
+    }
+
+    public Properties getConfig() {
+        return this.reader.getConfig();
     }
 }
