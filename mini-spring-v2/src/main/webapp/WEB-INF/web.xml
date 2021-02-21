@@ -4,9 +4,9 @@
 		 xmlns:web="http://java.sun.com/xml/ns/javaee/web-app_2_5.xsd"
 		 xsi:schemaLocation="http://java.sun.com/xml/ns/j2ee http://java.sun.com/xml/ns/j2ee/web-app_2_4.xsd"
 		 version="2.4">
-	<display-name>Gupao Web Application</display-name>
+	<display-name>BigRedCaps Web Application</display-name>
 	<servlet>
-		<servlet-name>gpmvc</servlet-name>
+		<servlet-name>lgmvc</servlet-name>
 		<servlet-class>com.lg.spring.framework.webmvc.servlet.LGDispatcherServlet</servlet-class>
 		<init-param>
 			<param-name>contextConfigLocation</param-name>
@@ -15,7 +15,7 @@
 		<load-on-startup>1</load-on-startup>
 	</servlet>
 	<servlet-mapping>
-		<servlet-name>gpmvc</servlet-name>
+		<servlet-name>lgmvc</servlet-name>
 		<url-pattern>/*</url-pattern>
 	</servlet-mapping>
 </web-app>

@@ -329,7 +329,7 @@ public class LgDispatcherServlet extends HttpServlet
     private void doLoadConfig(String contextConfigLocation) {
         //直接从类路径下找到Spring主配置文件所在的路径
         //并且将其读取出来放到Properties对象中
-        //相对于scanPackage=com.gupaoedu.demo 从文件中保存到了内存中
+        //相对于scanPackage=com.lg.demo 从文件中保存到了内存中
         InputStream fis = this.getClass().getClassLoader().getResourceAsStream(contextConfigLocation);
         try {
             contextConfig.load(fis);

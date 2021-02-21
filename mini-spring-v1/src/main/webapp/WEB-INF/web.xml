@@ -8,7 +8,7 @@
     <!--自定义Servlet-->
     <servlet>
         <servlet-name>lgmvc</servlet-name>
-        <servlet-class>com.lg.minispringframework.v2.servlet.GPDispatchServlet</servlet-class>
+        <servlet-class>com.lg.minispringframework.v3.servlet.LgDispatcherServlet</servlet-class>
         <init-param>
             <param-name>contextConfigLocation</param-name>
             <param-value>classpath:application.properties</param-value>
