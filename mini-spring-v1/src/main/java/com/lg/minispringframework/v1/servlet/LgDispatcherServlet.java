@@ -13,6 +13,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -20,6 +21,7 @@ import java.util.Arrays;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
+import java.util.concurrent.ConcurrentHashMap;
 
 /**
  * 仿照DispatcherServlet，自定义Servlet
@@ -30,7 +32,12 @@ import java.util.Properties;
  */
 public class LgDispatcherServlet extends HttpServlet
 {
-    private Map<String,Object> mapping = new HashMap<String, Object>();
+    // 保存扫描的类
+    private Map<String,Object> classMapping = new HashMap<String, Object>();
+
+    // 将url和方法映射
+    private Map<String,Object> handlerMapping = new HashMap<String, Object>();
+
     @Override
     protected void doGet(HttpServletRequest req, HttpServletResponse resp) throws ServletException, IOException {this.doPost(req,resp);}
     @Override
@@ -38,6 +45,7 @@ public class LgDispatcherServlet extends HttpServlet
         try {
             doDispatch(req,resp);
         } catch (Exception e) {
+            e.printStackTrace();
             resp.getWriter().write("500 Exception " + Arrays.toString(e.getStackTrace()));
         }
     }
@@ -45,30 +53,32 @@ public class LgDispatcherServlet extends HttpServlet
         String url = req.getRequestURI();
         String contextPath = req.getContextPath();
         url = url.replace(contextPath, "").replaceAll("/+", "/");
-        if(!this.mapping.containsKey(url)){resp.getWriter().write("404 Not Found!!");return;}
-        Method method = (Method) this.mapping.get(url);
+        if(!this.handlerMapping.containsKey(url)){resp.getWriter().write("404 Not Found!!");return;}
+        Method method = (Method) this.handlerMapping.get(url);
         Map<String,String[]> params = req.getParameterMap();
-        method.invoke(this.mapping.get(method.getDeclaringClass().getName()),new Object[]{req,resp,params.get("name")[0]});
+        method.invoke(this.handlerMapping.get(method.getDeclaringClass().getName()),new Object[]{req,resp,params.get("name")[0]});
     }
 
     //当我晕车的时候，我就不去看源码了
 
     //init方法肯定干得的初始化的工作
-    //inti首先我得初始化所有的相关的类，IOC容器、servletBean
+    //init首先我得初始化所有的相关的类，IOC容器、servletBean
     @Override
     public void init(ServletConfig config) throws ServletException {
         InputStream is = null;
         try{
+            // 加载配置文件
             Properties configContext = new Properties();
             is = this.getClass().getClassLoader().getResourceAsStream(config.getInitParameter("contextConfigLocation"));
             configContext.load(is);
             String scanPackage = configContext.getProperty("scanPackage");
+            // 扫描相关的类
             doScanner(scanPackage);
-            for (String className : mapping.keySet()) {
+            for (String className : classMapping.keySet()) {
                 if(!className.contains(".")){continue;}
                 Class<?> clazz = Class.forName(className);
                 if(clazz.isAnnotationPresent(LGController.class)){
-                    mapping.put(className,clazz.newInstance());
+                    handlerMapping.put(className,clazz.newInstance());
                     String baseUrl = "";
                     if (clazz.isAnnotationPresent(LGRequestMapping.class)) {
                         LGRequestMapping requestMapping = clazz.getAnnotation(LGRequestMapping.class);
@@ -79,21 +89,23 @@ public class LgDispatcherServlet extends HttpServlet
                         if (!method.isAnnotationPresent(LGRequestMapping.class)) {  continue; }
                         LGRequestMapping requestMapping = method.getAnnotation(LGRequestMapping.class);
                         String url = (baseUrl + "/" + requestMapping.value()).replaceAll("/+", "/");
-                        mapping.put(url, method);
+                        handlerMapping.put(url, method);
                         System.out.println("Mapped " + url + "," + method);
                     }
-                }else if(clazz.isAnnotationPresent(LGService.class)){
+                }
+                else if(clazz.isAnnotationPresent(LGService.class)){
                     LGService service = clazz.getAnnotation(LGService.class);
                     String beanName = service.value();
                     if("".equals(beanName)){beanName = clazz.getName();}
                     Object instance = clazz.newInstance();
-                    mapping.put(beanName,instance);
+                    handlerMapping.put(beanName,instance);
                     for (Class<?> i : clazz.getInterfaces()) {
-                        mapping.put(i.getName(),instance);
+                        handlerMapping.put(i.getName(),instance);
                     }
-                }else {continue;}
+                }
+                else {continue;}
             }
-            for (Object object : mapping.values()) {
+            for (Object object : handlerMapping.values()) {
                 if(object == null){continue;}
                 Class clazz = object.getClass();
                 if(clazz.isAnnotationPresent(LGController.class)){
@@ -105,17 +117,23 @@ public class LgDispatcherServlet extends HttpServlet
                         if("".equals(beanName)){beanName = field.getType().getName();}
                         field.setAccessible(true);
                         try {
-                            field.set(mapping.get(clazz.getName()),mapping.get(beanName));
+                            field.set(handlerMapping.get(clazz.getName()),handlerMapping.get(beanName));
                         } catch (IllegalAccessException e) {
                             e.printStackTrace();
                         }
                     }
                 }
             }
-        } catch (Exception e) {
-        }finally {
+        }
+        catch (Exception e) {
+            e.printStackTrace();
+        }
+        finally {
             if(is != null){
-                try {is.close();} catch (IOException e) {
+                try {
+                    is.close();
+                }
+                catch (IOException e) {
                     e.printStackTrace();
                 }
             }
@@ -129,7 +147,8 @@ public class LgDispatcherServlet extends HttpServlet
             if(file.isDirectory()){ doScanner(scanPackage + "." +  file.getName());}else {
                 if(!file.getName().endsWith(".class")){continue;}
                 String clazzName = (scanPackage + "." + file.getName().replace(".class",""));
-                mapping.put(clazzName,null);
+                // 扫描相关的类，放入Map中
+                classMapping.put(clazzName,null);
             }
         }
     }

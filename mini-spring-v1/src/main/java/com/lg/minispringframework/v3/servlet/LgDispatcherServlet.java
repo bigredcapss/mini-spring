@@ -308,7 +308,7 @@ public class LgDispatcherServlet extends HttpServlet
 
     //扫描出相关的类
     private void doScanner(String scanPackage) {
-        //scanPackage = com.gupaoedu.demo ，存储的是包路径
+        //scanPackage = com.lg.demo ，存储的是包路径
         //转换为文件路径，实际上就是把.替换为/就OK了
         //classpath
         URL url = this.getClass().getClassLoader().getResource("/" + scanPackage.replaceAll("\\.","/"));

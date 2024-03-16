@@ -10,6 +10,7 @@ import javax.servlet.http.HttpServletResponse;
 import java.io.File;
 import java.io.IOException;
 import java.io.InputStream;
+import java.lang.annotation.Annotation;
 import java.lang.reflect.Field;
 import java.lang.reflect.Method;
 import java.net.URL;
@@ -57,7 +58,7 @@ public class LgDispatcherServlet extends HttpServlet
 
         Method method = this.handlerMapping.get(url);
 
-        //从reqest中拿到url传过来的参数
+        //从request中拿到url传过来的参数
         Map<String,String[]> params = req.getParameterMap();
 
         //获取方法的形参列表
@@ -75,13 +76,21 @@ public class LgDispatcherServlet extends HttpServlet
                 paramValues[i] = resp;
                 continue;
             }else if(parameterType == String.class){
-                LGRequestParam requestParam = (LGRequestParam)parameterType.getAnnotation(LGRequestParam.class);
-                if(params.containsKey(requestParam.value())) {
-                    for (Map.Entry<String,String[]> param : params.entrySet()){
-                        String value = Arrays.toString(param.getValue())
-                                .replaceAll("\\[|\\]","")
-                                .replaceAll("\\s",",");
-                        paramValues[i] = value;
+                //提取方法中加了注解的参数
+                //把方法上的注解拿到，得到的是一个二维数组
+                //因为一个参数可以有多个注解，而一个方法又有多个参数
+                Annotation[] [] pa = method.getParameterAnnotations();
+                for (int j = 0; j < pa.length ; j ++) {
+                    for(Annotation a : pa[i]){
+                        if(a instanceof LGRequestParam){
+                            String paramName = ((LGRequestParam) a).value();
+                            if(!"".equals(paramName.trim())){
+                                String value = Arrays.toString(params.get(paramName))
+                                        .replaceAll("\\[|\\]","")
+                                        .replaceAll("\\s+",",");
+                                paramValues[i] = value;
+                            }
+                        }
                     }
                 }
             }
@@ -281,7 +290,7 @@ public class LgDispatcherServlet extends HttpServlet
     {
         // 直接从类路径下找到Spring主配置文件所在的路径
         // 并且将其读取出来放到Properties对象中
-        // 相当于scanPackage=com.gupaoedu.demo 从文件中保存到了内存中
+        // 相当于scanPackage=com.lg.demo 从文件中保存到了内存中
         InputStream inputStream = this.getClass().getClassLoader().getResourceAsStream(contextConfigLocation);
         try
         {

@@ -8,7 +8,7 @@ import java.lang.annotation.*;
  * @date 2021/1/23 14:59
  */
 @Target(ElementType.TYPE)
-@Retention(RetentionPolicy.CLASS)
+@Retention(RetentionPolicy.RUNTIME)
 @Documented
 public @interface LGController
 {
