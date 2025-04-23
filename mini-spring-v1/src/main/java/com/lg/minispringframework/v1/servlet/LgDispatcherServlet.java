@@ -67,13 +67,14 @@ public class LgDispatcherServlet extends HttpServlet
     public void init(ServletConfig config) throws ServletException {
         InputStream is = null;
         try{
-            // 加载配置文件
+            // 1.加载配置文件
             Properties configContext = new Properties();
             is = this.getClass().getClassLoader().getResourceAsStream(config.getInitParameter("contextConfigLocation"));
             configContext.load(is);
+            // 2.扫描相关的类
             String scanPackage = configContext.getProperty("scanPackage");
-            // 扫描相关的类
             doScanner(scanPackage);
+            // 3.初始化Ioc容器，进行DI，初始化HandlerMapping；这里Ioc容器和handlerMapping并未拆开
             for (String className : classMapping.keySet()) {
                 if(!className.contains(".")){continue;}
                 Class<?> clazz = Class.forName(className);

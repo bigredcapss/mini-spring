@@ -17,6 +17,9 @@ import java.net.URL;
 import java.util.*;
 
 /**
+ * 在v1版本的基础上，采用常用的设计模式（工厂模式，单例模式，委派模式，策略模式）将init方法中的代码进行封装，对代码进行了优化。
+ * 但代码的优雅程度还不太高，例如HandlerMapping还不能像SpringMVC一样支持正则，url参数还不支持强制类型转换，在发射调用前还需要
+ * 获取beanName，在3.0中继续优化。
  * @author BigRedCaps
  * @date 2021/1/23 14:33
  */
@@ -32,6 +35,7 @@ public class LgDispatcherServlet extends HttpServlet
     //传说中的IOC容器，我们来揭开它的神秘面纱
     //为了简化程序，暂时不考虑ConcurrentHashMap
     // 主要还是关注设计思想和原理
+    //其中Ioc容器就是注册时单利的具体案例
     private Map<String,Object> ioc = new HashMap<String,Object>();
 
     //保存url和Method的对应关系
@@ -115,6 +119,11 @@ public class LgDispatcherServlet extends HttpServlet
         }
     }
 
+    /**
+     * 初始化阶段
+     * @param config
+     * @throws ServletException
+     */
     @Override
     public void init (ServletConfig config) throws ServletException
     {
@@ -124,13 +133,13 @@ public class LgDispatcherServlet extends HttpServlet
         // 2.扫描相关的类
         doScanner(contextConfig.getProperty("scanPackage"));
 
-        // 3.初始化IoC容器，并进行实例化，保存到IoC容器中
+        // 3.初始化IoC容器，并进行实例化，保存到IoC容器中，工厂模式的体现
         doInstance();
 
         // 4.完成依赖注入（DI操作）
         doAutowired();
 
-        // 5.初始化HandlerMapping
+        // 5.初始化HandlerMapping，策略模式的体现
         doInitHandlerMapping();
 
         System.out.println("LG Spring framework is init.");
